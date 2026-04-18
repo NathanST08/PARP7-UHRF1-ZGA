@@ -527,3 +527,191 @@ p <- ggplot(df, aes(x = minus_log_q, y = Description)) +
 print(p) 
 ggsave(filename = "Adjusted_P_Pathway.pdf", plot = p, width = 10, height = 6) 
 ggsave(filename = "Adjusted_P_Pathway.tiff", plot = p, width = 10, height = 6, dpi = 600, compression = "lzw")
+
+#### Figure 7 #### 
+
+library(readxl) 
+library(pheatmap) 
+library(RColorBrewer) 
+library(viridis) 
+library(ggplot2) 
+library(grid) 
+library(ComplexHeatmap) 
+library(circlize) 
+
+gene_data <- read_excel("extracted_gene list-15-作图.xlsx", sheet = "Sheet1") 
+
+expression_matrix <- as.matrix(gene_data[, -1]) 
+rownames(expression_matrix) <- gene_data$gene_name
+colnames(expression_matrix) <- c("CTL3", "CTL4", "RBN3", "RBN4", "UHRF1-1", "UHRF1-2") 
+
+expression_matrix_scaled <- t(scale(t(expression_matrix))) 
+
+sample_groups <- data.frame( 
+  Group = factor(rep(c("CTL", "RBN", "UHRF1"), each = 2), 
+                 levels = c("CTL", "RBN", "UHRF1")), 
+  row.names = colnames(expression_matrix) 
+) 
+
+main_palette <- viridis(100) 
+
+group_colors <- list( 
+  Group = c( 
+    CTL = "#1B9E77",  
+    RBN = "#D95F02",  
+    UHRF1 = "#7570B3" 
+  ) 
+) 
+
+col_annotation <- HeatmapAnnotation( 
+  Group = sample_groups$Group, 
+  col = list(Group = c("CTL" = "#1B9E77", "RBN" = "#D95F02", "UHRF1" = "#7570B3")), 
+  annotation_name_side = "left", 
+  annotation_legend_param = list( 
+    title = "Treatment Group", 
+    title_gp = gpar(fontsize = 10, fontface = "bold"), 
+    labels_gp = gpar(fontsize = 9) 
+  ), 
+  gap = unit(1, "mm"), 
+  simple_anno_size = unit(0.4, "cm") 
+) 
+
+row_means <- rowMeans(expression_matrix_scaled, na.rm = TRUE) 
+row_annotation <- rowAnnotation( 
+  "Mean Expression" = row_means, 
+  col = list("Mean Expression" = colorRamp2( 
+    c(min(row_means), 0, max(row_means)), 
+    c("blue", "white", "red") 
+  )), 
+  annotation_name_side = "top", 
+  annotation_legend_param = list( 
+    title = "Mean Z-score", 
+    title_gp = gpar(fontsize = 10, fontface = "bold"), 
+    labels_gp = gpar(fontsize = 9) 
+  ), 
+  simple_anno_size = unit(0.3, "cm") 
+) 
+
+ht <- Heatmap( 
+  expression_matrix_scaled, 
+  name = "Expression Z-score", 
+  col = colorRamp2(seq(-2, 2, length.out = 100), viridis(100)), 
+  row_names_side = "left", 
+  row_names_gp = gpar(fontsize = 9, fontface = "italic"), 
+  column_names_side = "top", 
+  column_names_gp = gpar(fontsize = 10, fontface = "bold"), 
+  column_names_rot = 45, 
+  cluster_rows = FALSE, 
+  cluster_columns = FALSE, 
+  rect_gp = gpar(col = "white", lwd = 0.5), 
+  cell_fun = function(j, i, x, y, width, height, fill) { 
+    grid.rect(x = x, y = y, width = width, height = height, 
+              gp = gpar(fill = fill, col = "white")) 
+  }, 
+  width = unit(6, "cm"), 
+  height = unit(10, "cm"), 
+  heatmap_legend_param = list( 
+    title = "Z-score", 
+    title_gp = gpar(fontsize = 10, fontface = "bold"), 
+    labels_gp = gpar(fontsize = 9), 
+    legend_height = unit(3, "cm"), 
+    grid_width = unit(0.4, "cm"), 
+    at = c(-2, -1, 0, 1, 2) 
+  ), 
+  top_annotation = col_annotation, 
+  right_annotation = row_annotation
+) 
+
+pdf("Heatmap_SCI_Quality.pdf", width = 8, height = 10, paper = "a4r") 
+draw(ht, 
+     padding = unit(c(2, 2, 2, 2), "cm"), 
+     heatmap_legend_side = "right", 
+     annotation_legend_side = "right", 
+     merge_legend = TRUE) 
+dev.off() 
+
+png("Heatmap_SCI_Quality.png", width = 2400, height = 3000, res = 300) 
+draw(ht, 
+     padding = unit(c(2, 2, 2, 2), "cm"), 
+     heatmap_legend_side = "right", 
+     annotation_legend_side = "right", 
+     merge_legend = TRUE) 
+dev.off() 
+
+pdf("Heatmap_pheatmap_optimized.pdf", width = 8, height = 10) 
+pheatmap( 
+  expression_matrix_scaled, 
+  color = colorRampPalette(rev(brewer.pal(11, "RdBu")))(100), 
+  border_color = "gray80", 
+  border = TRUE, 
+  cluster_rows = FALSE, 
+  cluster_cols = FALSE, 
+  annotation_col = sample_groups, 
+  annotation_colors = group_colors, 
+  annotation_names_col = TRUE, 
+  annotation_legend = TRUE, 
+  annotation_names_row = TRUE, 
+  fontsize = 10, 
+  fontsize_row = 9, 
+  fontsize_col = 10, 
+  fontface = "bold", 
+  angle_col = 45, 
+  display_numbers = FALSE, 
+  number_color = "black", 
+  number_format = "%.1f", 
+  fontsize_number = 6, 
+  cellwidth = 20, 
+  cellheight = 12, 
+  gaps_row = NULL, 
+  gaps_col = c(2, 4), 
+  legend = TRUE, 
+  legend_breaks = c(-2, -1, 0, 1, 2), 
+  legend_labels = c("-2.0", "-1.0", "0.0", "1.0", "2.0"), 
+  main = "Gene Expression Heatmap", 
+  fontsize_main = 12, 
+  treeheight_row = 30, 
+  treeheight_col = 30, 
+  cutree_rows = NA, 
+  cutree_cols = NA, 
+  margins = c(8, 8), 
+  silent = FALSE
+) 
+dev.off() 
+
+library(reshape2) 
+
+heatmap_data <- melt(expression_matrix_scaled) 
+colnames(heatmap_data) <- c("Gene", "Sample", "Zscore") 
+
+heatmap_data$Group <- rep(sample_groups$Group, each = nrow(expression_matrix_scaled)) 
+
+ggplot_heatmap <- ggplot(heatmap_data, aes(x = Sample, y = Gene, fill = Zscore)) +
+  geom_tile(color = "white", size = 0.3) +
+  scale_fill_gradient2( 
+    low = "#2166AC", 
+    mid = "white", 
+    high = "#B2182B", 
+    midpoint = 0, 
+    name = "Z-score", 
+    limits = c(-2, 2) 
+  ) +
+  facet_grid(~ Group, scales = "free_x", space = "free_x") +
+  theme_minimal(base_size = 11) +
+  theme( 
+    axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"), 
+    axis.text.y = element_text(face = "italic"), 
+    axis.title = element_blank(), 
+    strip.text = element_text(face = "bold", size = 10), 
+    panel.grid = element_blank(), 
+    panel.border = element_rect(color = "gray30", fill = NA, size = 0.5), 
+    legend.position = "right", 
+    legend.key.height = unit(2, "cm"), 
+    plot.margin = unit(c(1, 1, 1, 1), "cm") 
+  ) +
+  labs( 
+    title = "Gene Expression Heatmap", 
+    subtitle = "CTL vs RBN vs UHRF1 Treatment Groups" 
+  ) 
+
+ggsave("Heatmap_ggplot2_version.pdf", ggplot_heatmap, width = 10, height = 8, dpi = 300) 
+ggsave("Heatmap_ggplot2_version.png", ggplot_heatmap, width = 10, height = 8, dpi = 300) 
