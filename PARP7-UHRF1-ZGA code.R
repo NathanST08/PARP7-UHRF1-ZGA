@@ -266,7 +266,7 @@ p <- ggplot(df_filtered, aes(x = RichFactor, y = Pathway)) +
 print(p)
 
 #### Figure 3  ####
-#### A comparison between the PARPi and CTL groups at the late 2-cell stage yielded 25 significantly upregulated metabolites. Subsequently, these metabolites were subjected to KEGG pathway enrichment analysis using the MetaboAnalyst platform (https://www.metaboanalyst.ca).
+#### A comparison between the PARP7i and CTL groups at the late 2-cell stage yielded 24 significantly upregulated metabolites. Subsequently, these metabolites were subjected to KEGG pathway enrichment analysis using the MetaboAnalyst platform (https://www.metaboanalyst.ca).
 #### KEGG pathway enrichment analysis for distinct metabolic clusters was performed using the MetaboAnalyst web server (version 6.0.0, https://www.metaboanalyst.ca), which operates via the underlying MetaboAnalystR package (version 4.0)”
 mSet <- InitDataObjects("conc", "msetora", FALSE, 150) 
 cmpd.vec <- c("Lysine", "Glutamic Acid", "Glutamine", "Nicotinic acid", 
